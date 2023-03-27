@@ -5,7 +5,7 @@ It contains two source files:
 - `adiosKokkos.cpp` that implements the Kokkos code that just creates a View and populates it.
 - `myADIOS.cpp` is a simple interface that forwards the code to the Kokkos functions
 
-Linking Kokkos mimics ADIOS2 in the following way:
+Linking Kokkos mimics ADIOS2 in the following way (`adiosKokkos` is the only files that links Kokkos, the rest are compiled as CXX files):
 
 ```cmake
 kokkos_compilation(SOURCE src/adiosKokkos.cpp)
@@ -32,12 +32,13 @@ target_link_libraries(KokkosHello PRIVATE Kokkos::kokkos ${ADIOS_LIB})
 
 There is a script in the root of this repo that can be used to build the myADIOS library and the application.
 
-```cmake
+```bash
 # for the library
 cmake -DKokkos_ROOT=${Kokkos_ROOT} -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc -DCMAKE_INSTALL_PREFIX=${myADIOS_HOME}/install ..
 
 # for the application
 cmake -DKokkos_ROOT=${Kokkos_ROOT} -D CMAKE_CXX_STANDARD=17 -D CMAKE_CXX_EXTENSIONS=OFF -DCMAKE_CXX_COMPILER=${Kokkos_HOME}/bin/nvcc_wrapper -DCMAKE_PREFIX_PATH=${myADIOS_HOME}/install ..
+export CPLUS_INCLUDE_PATH=/ccs/home/againaru/adios/code_example_shared_lib/myADIOS/install/include
 ```
 
 **Running the code**
@@ -49,10 +50,17 @@ Create View on memory space: Cuda
 Create View inside ADIOS on memory space: Cuda
 ```
 
-With the latest develop
+With the latest develop the code seg faults.
 ```
 [againaru@login5.summit code_example_shared_lib]$ ./build/KokkosHello
 Create View on memory space: Cuda
 Create View inside ADIOS on memory space: Cuda
 Segmentation fault (core dumped)
 ```
+
+If these two lines:
+```
+    set_property(SOURCE src/adiosKokkos.cpp PROPERTY LANGUAGE CUDA)
+    set_property(SOURCE src/adiosKokkos.cpp APPEND PROPERTY COMPILE_FLAGS "--extended-lambda")
+```
+are removed from the `myADIOS/CMakeLists.txt` the code runs correctly.
